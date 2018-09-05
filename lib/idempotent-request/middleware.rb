@@ -31,7 +31,11 @@ module IdempotentRequest
 
     def write_idempotent_request
       return unless storage.lock
-      storage.write(*app.call(request.env))
+      begin
+        storage.write(*app.call(request.env))
+      ensure
+        storage.unlock
+      end
     end
 
     def concurrent_request_response

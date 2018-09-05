@@ -30,8 +30,6 @@ module IdempotentRequest
 
       if (200..226).cover?(status)
         storage.write(key, payload(status, headers, response))
-      else
-        unlock
       end
 
       data

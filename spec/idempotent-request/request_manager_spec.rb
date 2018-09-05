@@ -134,22 +134,6 @@ RSpec.describe IdempotentRequest::RequestManager do
         end
       end
     end
-
-    context 'when status is not 200' do
-      let(:data) do
-        [404, {}, 'body']
-      end
-
-      it 'should not be stored' do
-        request_storage.write(*data)
-        expect(memory_storage.read(request.key)).to be_nil
-      end
-
-      it 'should unlock stored key' do
-        expect(memory_storage).to receive(:unlock).with(request.key)
-        request_storage.write(*data)
-      end
-    end
   end
 
   class IdempotencyCallback
