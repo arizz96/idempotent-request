@@ -44,11 +44,9 @@ module IdempotentRequest
     end
 
     def payload(status, headers, response)
-      Oj.dump({
-        status: status,
-        headers: headers.to_h,
-        response: Array(response)
-      })
+      Oj.dump(status: status,
+              headers: headers.to_h,
+              response: Array(response))
     end
 
     def run_callback(action, args)
