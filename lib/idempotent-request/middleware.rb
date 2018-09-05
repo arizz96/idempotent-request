@@ -39,7 +39,10 @@ module IdempotentRequest
     end
 
     def concurrent_request_response
-      [429, {}, []]
+      status = 429
+      headers = { 'Content-Type' => 'application/json' }
+      body = [ Oj.dump('error' => 'Concurrent requests detected') ]
+      Rack::Response.new(body, status, headers).finish
     end
 
     attr_reader :app, :env, :config, :request, :policy
