@@ -7,13 +7,12 @@ module IdempotentRequest
     end
 
     def call(env)
-      @request = Request.new(env, config)
-      debug_process
+      dup.debug_process(env)
     end
 
-    def debug_process
+    def debug_process(env)
       begin
-        process
+        process(env)
       rescue => e
         log_rails("Rescue IdempotencyError: #{e.message} #{e.backtrace} #{request.env}")
         storage.unlock
@@ -21,7 +20,8 @@ module IdempotentRequest
       end
     end
 
-    def process
+    def process(env)
+      set_request(env)
       return app.call(request.env) unless process?
       read_idempotent_request ||
         write_idempotent_request ||
@@ -70,6 +70,11 @@ module IdempotentRequest
     def log_rails(message)
       return unless defined?(Rails)
       Rails.logger.info message
+    end
+
+    def set_request(env)
+      @env = env
+      @request = Request.new(env, config)
     end
   end
 end
