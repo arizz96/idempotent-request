@@ -8,8 +8,8 @@ module IdempotentRequest
       @expire_time = config[:expire_time]
     end
 
-    def lock(key)
-      setnx_with_expiration(lock_key(key), Time.now.to_i)
+    def lock(key, context)
+      setnx_with_expiration(lock_key(key), { time: Time.now.to_f, context: context })
     end
 
     def unlock(key)

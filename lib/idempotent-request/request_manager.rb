@@ -8,8 +8,8 @@ module IdempotentRequest
       @callback = config[:callback]
     end
 
-    def lock
-      storage.lock(key)
+    def lock(context)
+      storage.lock(key, context)
     end
 
     def unlock

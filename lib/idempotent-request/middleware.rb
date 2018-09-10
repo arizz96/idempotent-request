@@ -7,12 +7,21 @@ module IdempotentRequest
     end
 
     def call(env)
-      # dup the middleware to be thread-safe
-      dup.process(env)
+      @request = Request.new(env, config)
+      debug_process
     end
 
-    def process(env)
-      set_request(env)
+    def debug_process
+      begin
+        process
+      rescue => e
+        log_rails("Rescue IdempotencyError: #{e.message} #{e.backtrace} #{request.env}")
+        storage.unlock
+        raise e
+      end
+    end
+
+    def process
       return app.call(request.env) unless process?
       read_idempotent_request ||
         write_idempotent_request ||
@@ -30,11 +39,13 @@ module IdempotentRequest
     end
 
     def write_idempotent_request
-      return unless storage.lock
+      return unless storage.lock(request.env)
       begin
-        storage.write(*app.call(request.env))
+        result = app.call(request.env)
+        storage.write(*result)
       ensure
         storage.unlock
+        result
       end
     end
 
@@ -56,9 +67,9 @@ module IdempotentRequest
       policy.new(request).should?
     end
 
-    def set_request(env)
-      @env = env
-      @request ||= Request.new(env, config)
+    def log_rails(message)
+      return unless defined?(Rails)
+      Rails.logger.info message
     end
   end
 end
