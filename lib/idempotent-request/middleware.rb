@@ -48,8 +48,7 @@ module IdempotentRequest
         request.env['idempotent.request']['write'] = result
         storage.write(*result)
       ensure
-        request.env['idempotent.request']['unlocked'] = true
-        storage.unlock
+        request.env['idempotent.request']['unlocked'] = [storage.unlock, storage.send(:key)]
         result
       end
     end
