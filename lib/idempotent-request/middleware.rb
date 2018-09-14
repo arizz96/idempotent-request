@@ -1,6 +1,7 @@
 module IdempotentRequest
   class Middleware
     def initialize(app, config = {})
+      @request = @env = @storage = nil
       @app = app
       @config = config
       @policy = config.fetch(:policy)
@@ -25,7 +26,7 @@ module IdempotentRequest
       set_request(env)
       request.request.env['idempotent.request'] = {}
       return app.call(request.env) unless process?
-      request.env['idempotent.request']['key'] = request.key
+      request.request.env['idempotent.request']['key'] = request.key
       response = read_idempotent_request || write_idempotent_request || concurrent_request_response
       instrument(request.request)
       response
@@ -45,10 +46,10 @@ module IdempotentRequest
       return unless storage.lock(request.env)
       begin
         result = app.call(request.env)
-        request.env['idempotent.request']['write'] = result
+        request.request.env['idempotent.request']['write'] = result
         storage.write(*result)
       ensure
-        request.env['idempotent.request']['unlocked'] = [storage.unlock, storage.send(:key)]
+        request.request.env['idempotent.request']['unlocked'] = [storage.unlock, storage.send(:key)]
         result
       end
     end
@@ -83,7 +84,7 @@ module IdempotentRequest
 
     def set_request(env)
       @env = env
-      @request = Request.new(env, config)
+      @request ||= Request.new(env, config)
     end
   end
 end

@@ -8,7 +8,7 @@ module IdempotentRequest
     end
 
     def key
-      @key ||= request.env[header_name] || SecureRandom.uuid
+      @key ||= request.env[header_name] || request.env['HTTP_X_AMZN_TRACE_ID'] || SecureRandom.uuid
     end
 
     def method_missing(method, *args)
