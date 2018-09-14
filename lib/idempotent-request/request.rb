@@ -8,7 +8,7 @@ module IdempotentRequest
     end
 
     def key
-      request.env[header_name]
+      @key ||= request.env[header_name] || SecureRandom.uuid
     end
 
     def method_missing(method, *args)

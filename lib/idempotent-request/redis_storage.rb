@@ -9,7 +9,8 @@ module IdempotentRequest
     end
 
     def lock(key, context)
-      setnx_with_expiration(lock_key(key), { time: Time.now.to_f, context: context })
+      # 1209600 == 2 weeks
+      setnx_with_expiration(lock_key(key), { time: Time.now.to_f, context: context }, 1_209_600)
     end
 
     def unlock(key)
@@ -26,13 +27,13 @@ module IdempotentRequest
 
     private
 
-    def setnx_with_expiration(key, data)
+    def setnx_with_expiration(key, data, lock_time = nil)
       redis.set(
         key,
         data,
         {}.tap do |options|
           options[:nx] = true
-          options[:ex] = expire_time.to_i if expire_time.to_i > 0
+          options[:ex] = lock_time || expire_time.to_i if expire_time.to_i > 0
         end
       )
     end
