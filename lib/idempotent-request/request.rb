@@ -3,12 +3,19 @@ module IdempotentRequest
     attr_reader :request
 
     def initialize(env, config = {})
-      @request = Rack::Request.new(env)
-      @header_name = config.fetch(:header_key, 'HTTP_IDEMPOTENCY_KEY')
+      @request     = Rack::Request.new(env)
+      @header_name = sanitize_header_name(config.fetch(:header_key, nil))
+      @body_name   = config.fetch(:body_key, nil)
     end
 
     def key
-      request.env[header_name]
+      if @header_name.present?
+        request.env[@header_name.to_s]
+      elsif @body_name.present?
+        request.env['action_dispatch.request.request_parameters'][@body_name.to_s]
+      else
+        nil
+      end
     end
 
     def method_missing(method, *args)
@@ -21,12 +28,13 @@ module IdempotentRequest
 
     private
 
-    def header_name
-      key = @header_name.to_s
-                        .upcase
-                        .tr('-', '_')
-
-      key.start_with?('HTTP_') ? key : "HTTP_#{key}"
+    def sanitize_header_name(string)
+      if string.present?
+        key = string.to_s.strip.upcase.tr('-', '_')
+        key.start_with?('HTTP_') ? key : "HTTP_#{key}"
+      else
+        nil
+      end
     end
   end
 end
