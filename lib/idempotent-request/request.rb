@@ -11,7 +11,7 @@ module IdempotentRequest
     def key
       if @header_name.present?
         request.env[@header_name.to_s]
-      elsif @body_name.present?
+      elsif @body_name.present? && request.env['action_dispatch.request.request_parameters'].present?
         request.env['action_dispatch.request.request_parameters'][@body_name.to_s]
       else
         nil
